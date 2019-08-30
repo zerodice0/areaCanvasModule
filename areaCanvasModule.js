@@ -352,20 +352,14 @@ function AreaCanvasModule(){
             console.log(modX+" "+modY);
             console.log(selectedAreaLeft+" "+selectedAreaTop+" "+selectedAreaRight+" "+selectedAreaBottom);
 
-            if(modX<0 && selectedAreaLeft<=0) {
-              modX=1;
+            if((modX<0 && selectedAreaLeft<=0)
+              || (modX>0 && selectedAreaRight>=elemFrCanvas.width)) {
+              modX=modX*(-1);
               boundOver = true;
             }
-            if(modX>0 && selectedAreaRight>=elemFrCanvas.width) {
-              modX=-1;
-              boundOver = true;
-            }
-            if(modY<0 && selectedAreaTop<=0) {
-              modY=1;
-              boundOver = true;
-            }
-            if(modY>0 && selectedAreaBottom>=elemFrCanvas.height) {
-              modY=-1;
+            if(modY<0 && selectedAreaTop<=0
+              || modY>0 && selectedAreaBottom>=elemFrCanvas.height) {
+              modY=modY*(-1);
               boundOver = true;
             }
 

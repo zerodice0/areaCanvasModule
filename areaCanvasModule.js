@@ -349,25 +349,20 @@ function AreaCanvasModule(){
               modX = x-selectedAreaX;
               modY = y-selectedAreaY;
               _calcSelectedAreaBound(selectedAreaIndex);
-            console.log(modX+" "+modY);
-            console.log(selectedAreaLeft+" "+selectedAreaTop+" "+selectedAreaRight+" "+selectedAreaBottom);
 
             if((modX<0 && selectedAreaLeft<=0)
-              || (modX>0 && selectedAreaRight>=elemFrCanvas.width)) {
-              modX=modX*(-1);
-              boundOver = true;
-            }
-            if(modY<0 && selectedAreaTop<=0
-              || modY>0 && selectedAreaBottom>=elemFrCanvas.height) {
-              modY=modY*(-1);
-              boundOver = true;
+              || (modX>0 && selectedAreaRight>=elemFrCanvas.width)
+              || (modY<0 && selectedAreaTop<=0)
+              || (modY>0 && selectedAreaBottom>=elemFrCanvas.height)) {
+                boundOver = true;
+            } else {
+              for(i=0; i<areaLength; i++) {
+                targetX = area[i].getX()+modX;
+                targetY = area[i].getY()+modY;
+                area[i].setPoint(targetX, targetY);
+              }
             }
 
-            for(i=0; i<areaLength; i++) {
-              targetX = area[i].getX()+modX;
-              targetY = area[i].getY()+modY;
-              area[i].setPoint(targetX, targetY);
-            }
 
             _calcSelectedAreaBound(selectedAreaIndex);
             selectedAreaX = x;

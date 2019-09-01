@@ -344,38 +344,33 @@ function AreaCanvasModule(){
             area[selectedPointIndex].setPoint(x, y);
             _refreshCanvas();
           } else if(selectedAreaIndex >= 0 && selectedAreaX >= 0 && selectedAreaY >= 0) {
-              
-              areaLength = area.length;
-              modX = x-selectedAreaX;
-              modY = y-selectedAreaY;
-              _calcSelectedAreaBound(selectedAreaIndex);
+            areaLength = area.length;
+            modX = x-selectedAreaX;
+            modY = y-selectedAreaY;
+            _calcSelectedAreaBound(selectedAreaIndex);
 
-            if((modX<0 && selectedAreaLeft<=0)
-              || (modX>0 && selectedAreaRight>=elemFrCanvas.width)
-              || (modY<0 && selectedAreaTop<=0)
-              || (modY>0 && selectedAreaBottom>=elemFrCanvas.height)) {
-                boundOver = true;
-            } else {
-              for(i=0; i<areaLength; i++) {
-                targetX = area[i].getX()+modX;
-                targetY = area[i].getY()+modY;
-                area[i].setPoint(targetX, targetY);
-              }
+            if((modX<0 && (selectedAreaLeft+modX)<=0)
+              || (modX>0 && (selectedAreaRight+modX)>=elemFrCanvas.width)) {
+              modX=0;
+              boundOver = true;
+            }
+            if(modY<=0 && (selectedAreaTop+modY)<=0
+              || modY>0 && (selectedAreaBottom+modY)>=elemFrCanvas.height) {
+              modY=0;
+              boundOver = true;
             }
 
+            for(i=0; i<areaLength; i++) {
+              targetX = area[i].getX()+modX;
+              targetY = area[i].getY()+modY;
+              area[i].setPoint(targetX, targetY);
+            }
 
             _calcSelectedAreaBound(selectedAreaIndex);
             selectedAreaX = x;
             selectedAreaY = y;
             _refreshCanvas();
 
-            if(boundOver) {
-              selectedAreaIndex = -1;
-              selectedAreaX = -1;
-              selectedAreaY = -1;
-              _initSelectedArea();
-              selectedPointIndex = -1;
-            }
           }
 
         }

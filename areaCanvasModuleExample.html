@@ -14,7 +14,7 @@
     window.onload = function() {
       var frc = new AreaCanvasModule();
       // frc.init("frcanvas", 640, 360, true);
-      frc.init({id:"areaCanvasModule", width:640, height:360, debug:true});
+      frc.init({id:"areaCanvasModule", width:640, height:360, debug:true, pointNumberLimit:10, pointAreaLimit:5, defaultImage:"/images/imgfail.jpg"});
       frc.setImageURL("https://pbs.twimg.com/media/CT-_kN6UAAER5P4.jpg");
   
       frc.addPointArrayToArea(0, [{x:10, y:10}, {x:10, y:60}, {x:60, y:60}, {x:60, y:10}]);

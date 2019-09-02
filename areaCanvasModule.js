@@ -134,7 +134,7 @@ function AreaCanvasModule(){
   };
 
   function _setImageURL(paramJpegURL) {
-    var jpegURL = "/images/imgfail.jpg";
+    var jpegURL = defaultImage;
     if(paramJpegURL) {jpegURL = paramJpegURL;}
 
     previewImage = new Image(width, height);
@@ -231,6 +231,7 @@ function AreaCanvasModule(){
       pointRadius = 3,
       pointNumberLimit = 16,
       areaNumberLimit = 4,
+      defaultImage = null,
       arrayColor = ["#EC7063", "#AF7AC5", "#5DADE2", "#7DCEA0", "#F4D03F", "#EB984E"],
       debugLog = function(paramMsg){
         if(console && console.log && isDebugMode) {
@@ -246,6 +247,7 @@ function AreaCanvasModule(){
     if (paramOption.id) {elemAreaCanvasId=paramOption.id;}
     if (paramOption.pointNumberLimit) {pointNumberLimit=paramOption.pointNumberLimit;}
     if (paramOption.areaNumberLimit) {areaNumberLimit=paramOption.areaNumberLimit;}
+    if (paramOption.defaultImage) {defaultImage=paramOption.defaultImage;}
   
     elemFrameAreaCanvas = document.getElementById(elemAreaCanvasId);
 

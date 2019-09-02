@@ -56,7 +56,7 @@ function AreaCanvasModule(){
 
   function _addPointToArea(paramAreaIndex, paramPoint) {
     if(paramAreaIndex < 0) {return false;}
-    if(!arrayArea[paramAreaIndex]) {
+    if(!arrayArea[paramAreaIndex] && arrayArea[paramAreaIndex].length<pointNumberLimit) {
       for(var i=0; i<=paramAreaIndex; i++) {
         if(arrayArea[i] == undefined) {
           arrayArea[i] = new Array()
@@ -124,7 +124,7 @@ function AreaCanvasModule(){
 
   function _refreshCanvas(paramURL){
     var imageURL = null;
-    context.clearRect(0, 0, elemFrCanvas.width, elemFrCanvas.height);
+    context.clearRect(0, 0, elemAreaCanvas.width, elemAreaCanvas.height);
     paramURL ? imageURL=paramURL : imageURL=previewImage.src;
     
     _setImageURL(imageURL);
@@ -140,9 +140,9 @@ function AreaCanvasModule(){
     previewImage = new Image(width, height);
     previewImage.onload = function (){
       //rendering image
-      // context.drawImage(this, 0, 0, elemFrCanvas.width, elemFrCanvas.height);
-      elemFrCanvas.style.background="url("+jpegURL+")";
-      elemFrCanvas.style.backgroundSize = "100% 100%";
+      // context.drawImage(this, 0, 0, elemAreaCanvas.width, elemAreaCanvas.height);
+      elemAreaCanvas.style.background="url("+jpegURL+")";
+      elemAreaCanvas.style.backgroundSize = "100% 100%";
 
       //rendering area
     }
@@ -210,9 +210,9 @@ function AreaCanvasModule(){
   }
 
   //private values  
-  var elemFrameFrCanvas = null,
-      elemFrCanvasId = null,
-      elemFrCanvas = null,
+  var elemFrameAreaCanvas = null,
+      elemAreaCanvasId = null,
+      elemAreaCanvas = null,
       ieVersion = _getIeVersion(),
       width = 640,
       height = 480,
@@ -229,6 +229,8 @@ function AreaCanvasModule(){
       arrayArea = [],
       isDebugMode = false,
       pointRadius = 3,
+      pointNumberLimit = 16,
+      areaNumberLimit = 4,
       arrayColor = ["#EC7063", "#AF7AC5", "#5DADE2", "#7DCEA0", "#F4D03F", "#EB984E"],
       debugLog = function(paramMsg){
         if(console && console.log && isDebugMode) {
@@ -238,35 +240,37 @@ function AreaCanvasModule(){
   
   //public
   this.init = function(paramOption) {
-    paramOption.width ? width=paramOption.width : width=640;
-    paramOption.height ? height=paramOption.height : height=480;
-    paramOption.debug ? isDebugMode=paramOption.debug : isDebugMode=false;
-    paramOption.id ? elemFrCanvasId=paramOption.id : elemFrCanvasId="frcanvas";
+    if (paramOption.width) {width=paramOption.width;}
+    if (paramOption.height) {height=paramOption.height;}
+    if (paramOption.debug) {isDebugMode=paramOption.debug;}
+    if (paramOption.id) {elemAreaCanvasId=paramOption.id;}
+    if (paramOption.pointNumberLimit) {pointNumberLimit=paramOption.pointNumberLimit;}
+    if (paramOption.areaNumberLimit) {areaNumberLimit=paramOption.areaNumberLimit;}
   
-    elemFrameFrCanvas = document.getElementById(elemFrCanvasId);
+    elemFrameAreaCanvas = document.getElementById(elemAreaCanvasId);
 
-    if(!elemFrameFrCanvas) {
+    if(!elemFrameAreaCanvas) {
       debugLog("paramElemId is not found.")
       return false;
     }
 
     if(0<ieVersion && ieVersion<10) { //not support canvas
-      elemFrameFrCanvas.innerHTML = "<span>not support Internet Explorer "+ieVersion+". Please using Chrome Browser.</span>"
+      elemFrameAreaCanvas.innerHTML = "<span>not support Internet Explorer "+ieVersion+". Please using Chrome Browser.</span>"
     } else {
-      elemFrameFrCanvas.innerHTML = "<canvas width=\""+width+"\" height=\""+height+"\"></canvas>"
+      elemFrameAreaCanvas.innerHTML = "<canvas width=\""+width+"\" height=\""+height+"\"></canvas>"
     }
 
-    elemFrCanvas = elemFrameFrCanvas.children[0];
-    if(!elemFrCanvas) {
+    elemAreaCanvas = elemFrameAreaCanvas.children[0];
+    if(!elemAreaCanvas) {
       debugLog("Can not create Canavas Element.");
       return false;
     } else {
-      context = elemFrCanvas.getContext("2d");
+      context = elemAreaCanvas.getContext("2d");
     }
 
-    if(!elemFrCanvas.onmousedown) {
-      elemFrCanvas.onmousedown = function(event) {
-        var rect = elemFrCanvas.getBoundingClientRect(),
+    if(!elemAreaCanvas.onmousedown) {
+      elemAreaCanvas.onmousedown = function(event) {
+        var rect = elemAreaCanvas.getBoundingClientRect(),
             x = event.clientX - rect.left,
             y = event.clientY - rect.top;
   
@@ -318,15 +322,15 @@ function AreaCanvasModule(){
 
     }
 
-    if(!elemFrCanvas.oncontextmenu) {
-      elemFrCanvas.oncontextmenu = function(event) {
+    if(!elemAreaCanvas.oncontextmenu) {
+      elemAreaCanvas.oncontextmenu = function(event) {
         event.preventDefault();
       }
     }
 
-    if(!elemFrCanvas.onmousemove) {
-      elemFrCanvas.onmousemove = function(event) {
-        var rect = elemFrCanvas.getBoundingClientRect(),
+    if(!elemAreaCanvas.onmousemove) {
+      elemAreaCanvas.onmousemove = function(event) {
+        var rect = elemAreaCanvas.getBoundingClientRect(),
             x = event.clientX - rect.left,
             y = event.clientY - rect.top,
             targetX = 0,
@@ -350,12 +354,12 @@ function AreaCanvasModule(){
             _calcSelectedAreaBound(selectedAreaIndex);
 
             if((modX<0 && (selectedAreaLeft+modX)<=0)
-              || (modX>0 && (selectedAreaRight+modX)>=elemFrCanvas.width)) {
+              || (modX>0 && (selectedAreaRight+modX)>=elemAreaCanvas.width)) {
               modX=0;
               boundOver = true;
             }
             if(modY<=0 && (selectedAreaTop+modY)<=0
-              || modY>0 && (selectedAreaBottom+modY)>=elemFrCanvas.height) {
+              || modY>0 && (selectedAreaBottom+modY)>=elemAreaCanvas.height) {
               modY=0;
               boundOver = true;
             }
@@ -377,8 +381,8 @@ function AreaCanvasModule(){
       };
     }
     
-    if(!elemFrCanvas.onmouseup) {
-      elemFrCanvas.onmouseup = function(event) {
+    if(!elemAreaCanvas.onmouseup) {
+      elemAreaCanvas.onmouseup = function(event) {
         selectedAreaIndex = -1;
         selectedAreaX = -1;
         selectedAreaY = -1;
@@ -387,15 +391,15 @@ function AreaCanvasModule(){
       };
     }
     
-    if(!elemFrCanvas.ondblclick) {
-      elemFrCanvas.ondblclick = function(event) {
+    if(!elemAreaCanvas.ondblclick) {
+      elemAreaCanvas.ondblclick = function(event) {
         var i=0, j=0,
             area = null,
             pointA = null,
             pointB = null,
             arrayAreaLength = arrayArea.length,
             areaLength = 0,
-            rect = elemFrCanvas.getBoundingClientRect(),
+            rect = elemAreaCanvas.getBoundingClientRect(),
             x = event.clientX - rect.left,
             y = event.clientY - rect.top,
             targetPoint = new Point(x, y);
@@ -403,23 +407,28 @@ function AreaCanvasModule(){
         for(var i=0; i<arrayAreaLength; i++) {
           area = arrayArea[i];
           areaLength = area.length;
-
-          for(var j=1; j<areaLength; j++) {
+          
+          if(areaLength < pointNumberLimit) {
+            for(var j=1; j<areaLength; j++) {
+              pointA = area[j-1];
+              pointB = area[j];
+  
+              if(_isPointOnTheLine(pointA, pointB, targetPoint)) {
+                area.splice(j, 0, targetPoint);
+                break;
+              }
+            }
+  
+            //end point <-> start point
             pointA = area[j-1];
-            pointB = area[j];
-
+            pointB = area[0];
+  
             if(_isPointOnTheLine(pointA, pointB, targetPoint)) {
               area.splice(j, 0, targetPoint);
-              break;
             }
+
           }
 
-          pointA = area[j-1];
-          pointB = area[0];
-
-          if(_isPointOnTheLine(pointA, pointB, targetPoint)) {
-            area.splice(j, 0, targetPoint);
-          }
         }
 
         _refreshCanvas();
@@ -442,6 +451,7 @@ function AreaCanvasModule(){
 
   this.addPointArrayToArea = function(paramAreaIndex, paramPointArray) {
     if(paramAreaIndex < 0) {return false;}
+    if(paramAreaIndex > areaNumberLimit) {return false;}
     if(!arrayArea[paramAreaIndex]) {
       for(var i=0; i<=paramAreaIndex; i++) {
         if(arrayArea[i] == undefined) {
@@ -467,6 +477,31 @@ function AreaCanvasModule(){
 
     return true;
   };
+
+  this.addPushArrayToArea = function(paramPointArray) {
+    var arrayAreaLength = arrayArea.length;
+    if(arrayAreaLength >= areaNumberLimit) {return false;}
+    if(!arrayArea[arrayAreaLength]) {
+      arrayArea[arrayAreaLength] = new Array();
+    }
+
+    for(var data in paramPointArray) {
+      if(paramPointArray[data] != undefined && paramPointArray[data] instanceof Point) {
+        arrayArea[arrayAreaLength].push(paramPointArray[data]);
+        debugLog("new Point Object("+paramPointArray[data].getX()+", "+paramPointArray[data].getY()+") is add to area"+arrayAreaLength+".");
+      } else if((paramPointArray[data].x != undefined) && (paramPointArray[data].y != undefined)) {
+        arrayArea[arrayAreaLength].push(new Point(paramPointArray[data].x, paramPointArray[data].y));
+        debugLog("new Point Object("+paramPointArray[data].x+", "+paramPointArray[data].y+") is add to area"+arrayAreaLength+".");
+      } else {
+        debugLog("param error!");
+        return false;
+      }
+    }
+
+    _refreshCanvas();
+
+    return true;
+  }
 
   this.deletePointFromArea = function(paramAreaIndex, paramPointIndex) {
     if(paramAreaIndex < 0) {

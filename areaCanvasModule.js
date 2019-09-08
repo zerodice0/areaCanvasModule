@@ -541,8 +541,8 @@ function AreaCanvasModule(){
     return true;
   };
 
-  this.refleshCanvas = function() {
-    _refreshCanvas();
+  this.refreshCanvas = function(paramUrl) {
+    _refreshCanvas(paramUrl);
 
     return true;
   };

@@ -34,19 +34,20 @@ function AreaCanvasModule(){
   'use strict'
 
   //private function
+  function _isNullOrUndefined(paramValue){
+    return paramValue == undefined || paramValue == null;
+  }
+
   function _getIeVersion(){
     var msIeRegExp = new RegExp("MSIE ([0-9]{1,}[\.0-9]{0,})"),
         tridentRegExp  = new RegExp("Trident/.*rv:([0-9]{1,}[\.0-9]{0,})"),
         userAgent = window.navigator.userAgent,
         ieVersion = -1;
 
-    if (window.navigator.appName == 'Microsoft Internet Explorer')
-    {
+    if (window.navigator.appName == 'Microsoft Internet Explorer') {
       if (msIeRegExp.exec(userAgent) != null)
       ieVersion = parseFloat( RegExp.$1 );
-    }
-    else if (window.navigator.appName == 'Netscape')
-    {
+    } else if (window.navigator.appName == 'Netscape') {
       if (tridentRegExp.exec(userAgent) != null)
       ieVersion = parseFloat( RegExp.$1 );
     }
@@ -536,9 +537,43 @@ function AreaCanvasModule(){
 
   this.setImageURL = function(paramJpegURL) {
     _setImageURL(paramJpegURL);
+
+    return true;
   };
 
   this.refleshCanvas = function() {
     _refreshCanvas();
+
+    return true;
   };
+
+  this.drawRect = function(paramStartX, paramStartY, paramEndX, paramEndY, paramLabel) {
+    var label = null, //reserved
+        startX = 0,
+        startY = 0,
+        endX = 0,
+        endY = 0, 
+        width = 0,
+        height = 0;
+
+    if(_isNullOrUndefined(paramStartX) || _isNullOrUndefined(paramStartY)
+      || _isNullOrUndefined(paramEndX) || _isNullOrUndefined(paramEndY)) {
+        return false;
+    }
+    if(paramLabel) {label = paramLabel;}
+    if (paramStartX) {startX = paramStartX;}
+    if (paramStartY) {startY = paramStartY;}
+    if (paramEndX) {endX = paramEndX;}
+    if (paramEndY) {endY = paramEndY;}
+    
+    width = endX-startX;
+    height = endY-startY;
+
+    context.beginPath();
+    context.strokeStyle = "#8561c7"
+    context.rect(startX, startY, width, height);
+    context.stroke();
+
+    return true;
+  }
 };

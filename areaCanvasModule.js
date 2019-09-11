@@ -249,6 +249,20 @@ function AreaCanvasModule(){
     if (paramOption.pointNumberLimit) {pointNumberLimit=paramOption.pointNumberLimit;}
     if (paramOption.areaNumberLimit) {areaNumberLimit=paramOption.areaNumberLimit;}
     if (paramOption.defaultImage) {defaultImage=paramOption.defaultImage;}
+    if (paramOption.arrayColor) {
+      arrayColor = (function(paramArrayColor, paramAreaNumberLimit){
+        var tmpArrayColor = paramArrayColor,
+            index = tmpArrayColor.length,
+            lengthDefaultColorArray = arrayColor.length;
+        if(tmpArrayColor.length<paramAreaNumberLimit) {
+          for(index = tmpArrayColor.length; index<paramAreaNumberLimit && index<lengthDefaultColorArray; index++) {
+            tmpArrayColor.push(paramArrayColor[index]);
+          }
+        }
+        
+        return tmpArrayColor;
+      })(paramOption.arrayColor, areaNumberLimit);
+    }
   
     elemFrameAreaCanvas = document.getElementById(elemAreaCanvasId);
 

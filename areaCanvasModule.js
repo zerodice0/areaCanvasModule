@@ -234,6 +234,7 @@ function AreaCanvasModule(){
       areaNumberLimit = 4,
       defaultImage = null,
       arrayColor = ["#EC7063", "#AF7AC5", "#5DADE2", "#7DCEA0", "#F4D03F", "#EB984E"],
+      isFixPointNumber = false,
       debugLog = function(paramMsg){
         if(console && console.log && isDebugMode) {
           console.log(paramMsg);
@@ -242,14 +243,14 @@ function AreaCanvasModule(){
   
   //public
   this.init = function(paramOption) {
-    if (paramOption.width) {width=paramOption.width;}
-    if (paramOption.height) {height=paramOption.height;}
-    if (paramOption.debug) {isDebugMode=paramOption.debug;}
-    if (paramOption.id) {elemAreaCanvasId=paramOption.id;}
-    if (paramOption.pointNumberLimit) {pointNumberLimit=paramOption.pointNumberLimit;}
-    if (paramOption.areaNumberLimit) {areaNumberLimit=paramOption.areaNumberLimit;}
-    if (paramOption.defaultImage) {defaultImage=paramOption.defaultImage;}
-    if (paramOption.arrayColor) {
+    if (paramOption.width != null) {width=paramOption.width;}
+    if (paramOption.height != null) {height=paramOption.height;}
+    if (paramOption.debug != null) {isDebugMode=paramOption.debug;}
+    if (paramOption.id != null) {elemAreaCanvasId=paramOption.id;}
+    if (paramOption.pointNumberLimit != null) {pointNumberLimit=paramOption.pointNumberLimit;}
+    if (paramOption.areaNumberLimit != null) {areaNumberLimit=paramOption.areaNumberLimit;}
+    if (paramOption.defaultImage != null) {defaultImage=paramOption.defaultImage;}
+    if (paramOption.arrayColor != null) {
       arrayColor = (function(paramArrayColor, paramAreaNumberLimit){
         var tmpArrayColor = paramArrayColor,
             index = tmpArrayColor.length,
@@ -263,6 +264,7 @@ function AreaCanvasModule(){
         return tmpArrayColor;
       })(paramOption.arrayColor, areaNumberLimit);
     }
+    if (paramOption.isFixPointNumber != null) {isFixPointNumber=paramOption.isFixPointNumber;}
   
     elemFrameAreaCanvas = document.getElementById(elemAreaCanvasId);
 
@@ -410,6 +412,7 @@ function AreaCanvasModule(){
     
     if(!elemAreaCanvas.ondblclick) {
       elemAreaCanvas.ondblclick = function(event) {
+        if(isFixPointNumber) {return false;}
         var i=0, j=0,
             area = null,
             pointA = null,

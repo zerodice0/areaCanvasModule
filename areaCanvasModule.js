@@ -116,6 +116,7 @@ function AreaCanvasModule(){
       }
 
       context.lineTo(area[0].getX(), area[0].getY());
+      context.globalAlpha = 1;
       context.strokeStyle = arrayColor[i];
       context.stroke();
     }
@@ -129,6 +130,11 @@ function AreaCanvasModule(){
     paramURL ? imageURL=paramURL : imageURL=previewImage.src;
     
     _setImageURL(imageURL);
+    if(hoveredAreaHighlight == true 
+      && (hoveredAreaIndex >= 0 || selectedAreaIndex >= 0)) {
+      var areaIndex = selectedAreaIndex>=0 ? selectedAreaIndex:hoveredAreaIndex;
+      _fillColorToArea(arrayArea[areaIndex], hoveredAreaColor);
+    }
     _drawArea();
 
     return true;
@@ -152,9 +158,11 @@ function AreaCanvasModule(){
   };
 
   function _isPointOnTheLine(paramPointA, paramPointB, paramTargetPoint) {
-    if(!paramPointA instanceof Point) {return false;}
-    if(!paramPointB instanceof Point) {return false;}
-    if(!paramTargetPoint instanceof Point) {return false;}
+    var result = false;
+
+    if(!paramPointA instanceof Point) {return result;}
+    if(!paramPointB instanceof Point) {return result;}
+    if(!paramTargetPoint instanceof Point) {return result;}
 
     var pointA = paramPointA,
         pointB = paramPointB,
@@ -167,18 +175,18 @@ function AreaCanvasModule(){
     if((pointA.getY() == pointB.getY())
         && (pointA.getY()-pointRadius < paramTargetPoint.getY() && paramTargetPoint.getY() < pointA.getY()+pointRadius)
         && (minX < paramTargetPoint.getX() && paramTargetPoint.getX() < maxX)) {
-      return true;
+      result = true;
     } else if((pointA.getX() == pointB.getX())
         && (pointA.getX()-pointRadius < paramTargetPoint.getX() && paramTargetPoint.getX() < pointA.getX()+pointRadius)
         && (minY < paramTargetPoint.getY() && paramTargetPoint.getY() < maxY)) {
-      return true;
+      result = true;
     } else if(paramTargetPoint.getY()-pointA.getY()-3 <= m*(paramTargetPoint.getX()-pointA.getX())
               && m*(paramTargetPoint.getX()-pointA.getX()) <= paramTargetPoint.getY()-pointA.getY()+3
               && minX < paramTargetPoint.getX() && paramTargetPoint.getX() < maxX) {
-      return true;
+      result = true;
     }
 
-    return false;
+    return result;
   }
 
   function _initSelectedArea() {
@@ -210,6 +218,39 @@ function AreaCanvasModule(){
     return true;
   }
 
+  function _isMouseOnArea(paramX, paramY, paramArea) {
+    context.beginPath();
+
+    for(var j=0, point=paramArea[j]; point; point=paramArea[++j]) {
+      if (j==0) {
+        context.moveTo(point.getX(), point.getY());
+      } else {
+        context.lineTo(point.getX(), point.getY());
+      }
+
+    }
+    context.closePath();
+
+    return context.isPointInPath(paramX, paramY)
+  }
+
+  function _fillColorToArea(paramArea, colorCode) {
+    context.beginPath();
+
+    for(var j=0, point=paramArea[j]; point; point=paramArea[++j]) {
+      if (j==0) {
+        context.moveTo(point.getX(), point.getY());
+      } else {
+        context.lineTo(point.getX(), point.getY());
+      }
+    }
+    context.closePath();
+    context.fillStyle = colorCode;
+    context.globalAlpha = hoveredAreaAlpha;
+
+    return context.fill();
+  }
+
   //private values  
   var elemFrameAreaCanvas = null,
       elemAreaCanvasId = null,
@@ -235,6 +276,10 @@ function AreaCanvasModule(){
       defaultImage = null,
       arrayColor = ["#EC7063", "#AF7AC5", "#5DADE2", "#7DCEA0", "#F4D03F", "#EB984E"],
       isFixPointNumber = false,
+      hoveredAreaColor = "#CCAF0A",
+      hoveredAreaIndex = -1,
+      hoveredAreaAlpha = 0.5,
+      hoveredAreaHighlight = true,
       debugLog = function(paramMsg){
         if(console && console.log && isDebugMode) {
           console.log(paramMsg);
@@ -250,6 +295,10 @@ function AreaCanvasModule(){
     if (paramOption.pointNumberLimit != null) {pointNumberLimit=paramOption.pointNumberLimit;}
     if (paramOption.areaNumberLimit != null) {areaNumberLimit=paramOption.areaNumberLimit;}
     if (paramOption.defaultImage != null) {defaultImage=paramOption.defaultImage;}
+    if (paramOption.hoveredAreaColor != null) {hoveredAreaColor=paramOption.hoveredAreaColor;}
+    if (paramOption.hoveredAreaAlpha != null) {hoveredAreaAlpha=paramOption.hoveredAreaAlpha;}
+    if (paramOption.hoveredAreaHighlight != null) {hoveredAreaHighlight=paramOption.hoveredAreaHighlight;}
+
     if (paramOption.arrayColor != null) {
       arrayColor = (function(paramArrayColor, paramAreaNumberLimit){
         var tmpArrayColor = paramArrayColor,
@@ -359,7 +408,15 @@ function AreaCanvasModule(){
             i=0,
             modX = 0,
             modY = 0,
-            boundOver = false;
+            boundOver = false,
+            isMouseOnArea = false;
+
+        for(var i=0; i<arrayArea.length; i++) {
+          if(_isMouseOnArea(x-selectedAreaX, y-selectedAreaY, arrayArea[i])) {
+            hoveredAreaIndex = i;
+            isMouseOnArea = true;
+          }
+        }
 
         area = arrayArea[selectedAreaIndex];
         if(area) {
@@ -393,9 +450,13 @@ function AreaCanvasModule(){
             selectedAreaX = x;
             selectedAreaY = y;
             _refreshCanvas();
-
           }
 
+        } else if(hoveredAreaIndex >= 0 && isMouseOnArea == false) {
+          hoveredAreaIndex = -1;
+          _refreshCanvas();
+        } else if(isMouseOnArea) {
+          _refreshCanvas();
         }
       };
     }
@@ -446,9 +507,7 @@ function AreaCanvasModule(){
             if(_isPointOnTheLine(pointA, pointB, targetPoint)) {
               area.splice(j, 0, targetPoint);
             }
-
           }
-
         }
 
         _refreshCanvas();
@@ -463,6 +522,20 @@ function AreaCanvasModule(){
     if(!arrayArea[paramAreaIndex]) {return false;}
 
     return arrayArea[paramAreaIndex];
+  }
+
+  this.getAreaToRelativeCoordinates = function(paramAreaIndex) {
+    if(paramAreaIndex < 0) {return false;}
+    if(!arrayArea[paramAreaIndex]) {return false;}
+
+    var resultArray = [];
+    var tempPoint = null;
+    for(var i=0; i<arrayArea[paramAreaIndex].length; i++) {
+      tempPoint = arrayArea[paramAreaIndex][i];
+      resultArray.push(new Point(tempPoint.getX()/width, tempPoint.getY()/height));
+    }
+
+    return resultArray;
   }
 
   this.addPointToArea = function(paramAreaIndex, paramPoint) {

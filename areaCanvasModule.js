@@ -125,10 +125,9 @@ function AreaCanvasModule(){
   }
 
   function _refreshCanvas(paramURL){
-    var imageURL = null;
+    var imageURL = paramURL ? paramURL : previewImage.src;
     context.clearRect(0, 0, elemAreaCanvas.width, elemAreaCanvas.height);
-    paramURL ? imageURL=paramURL : imageURL=previewImage.src;
-    
+  
     _setImageURL(imageURL);
     if(hoveredAreaHighlight == true 
       && (hoveredAreaIndex >= 0 || selectedAreaIndex >= 0)) {
@@ -335,6 +334,8 @@ function AreaCanvasModule(){
     } else {
       context = elemAreaCanvas.getContext("2d");
     }
+
+    _setImageURL(defaultImage)
 
     if(!elemAreaCanvas.onmousedown) {
       elemAreaCanvas.onmousedown = function(event) {

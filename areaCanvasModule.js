@@ -28,6 +28,9 @@ function Point(defaultX, defaultY) {
     if (paramX) {x=paramX;}
     if (paramY) {y=paramY;}
   }
+  this.toString = function(){
+    return `(${x}, ${y})`;
+  }
 }
 
 function AreaCanvasModule(){
@@ -81,19 +84,30 @@ function AreaCanvasModule(){
     return true;
   }
 
+  function _map(paramArray, paramFunction) {
+    var result = [];
+    for(var i=0, point=paramArray[i]; point; point=paramArray[++i]) {
+      result.push(paramFunction(point));
+    }
+
+    return result;
+  }
+
   function _drawArea(){
     var i=0, j=0,
     area = null,
     point = null,
     arrayAreaLength = arrayArea.length,
     areaLength = 0;
-    // for(i=0, area=arrayArea[i]; area; area=arrayArea[++i]) {
     for(i=0; i<arrayAreaLength;i++) {
       area = arrayArea[i];
       areaLength = area.length;
 
+      if(modifyOnlyOneArea && modifyOnlyOneAreaIndex != i) {
+        continue;
+      }
+
       context.beginPath();
-      // for(var j=0, point=area[j]; point; point=area[++j]) {
       for(j=0; j<areaLength; j++) {
         point = area[j];
         if(j===0) {
@@ -146,9 +160,10 @@ function AreaCanvasModule(){
     previewImage = new Image(width, height);
     previewImage.onload = function (){
       //rendering image
-      // context.drawImage(this, 0, 0, elemAreaCanvas.width, elemAreaCanvas.height);
       elemAreaCanvas.style.background="url("+jpegURL+")";
-      elemAreaCanvas.style.backgroundSize = "100% 100%";
+      elemAreaCanvas.style.backgroundPosition = canvasPadding+"px "+canvasPadding+"px";
+      elemAreaCanvas.style.backgroundSize = width+"px "+height+"px";
+      elemAreaCanvas.style.backgroundRepeat = "no-repeat";
 
       //rendering area
     }
@@ -250,6 +265,116 @@ function AreaCanvasModule(){
     return context.fill();
   }
 
+  function _hardCopyArea(targetArea) {
+    var result = [];
+    for(var i=0, point=targetArea[i]; point; point=targetArea[++i]) {
+      result.push(new Point(point.getX(), point.getY()));
+    }
+
+    return result;
+  }
+
+  function _onMouseDownOneArea(event) {
+    var rect = elemAreaCanvas.getBoundingClientRect(),
+    x = event.clientX - rect.left,
+    y = event.clientY - rect.top;
+
+    debugLog("click point: ("+x+", "+y+")");
+    //find point from arrayArea
+    context.beginPath();
+
+    for(var j=0, area=arrayArea[modifyOnlyOneAreaIndex], point=area[j]; point; point=area[++j]) {
+      if (j==0) {
+        context.moveTo(point.getX(), point.getY());
+      } else {
+        context.lineTo(point.getX(), point.getY());
+      }
+
+      if(((point.getX()-pointRadius)<x && x<(point.getX()+pointRadius))
+        && ((point.getY()-pointRadius)<y && y<(point.getY()+pointRadius))) {
+
+        if (event.button == 0) {
+          //left-click on the point
+          selectedAreaIndex = modifyOnlyOneAreaIndex;
+          selectedPointIndex = j;
+        } else if(!isFixPointNumber && (event.button==2) && (area.length>3)){
+          //right-click on the point
+          event.preventDefault();
+          area.splice(j, 1);
+          _refreshCanvas();
+        }
+
+        break;
+      }
+
+    }
+    context.closePath();
+
+    if(context.isPointInPath(x, y)
+      && selectedAreaIndex < 0
+      && selectedPointIndex < 0) {
+      selectedAreaIndex = modifyOnlyOneAreaIndex;
+      selectedAreaX = x;
+      selectedAreaY = y;
+      copiedSelectedArea = _hardCopyArea(arrayArea[selectedAreaIndex]);
+      _initSelectedArea();
+      _calcSelectedAreaBound(selectedAreaIndex);
+    }
+      
+  }
+
+  function _onMouseDownMultiArea(event) {
+    var rect = elemAreaCanvas.getBoundingClientRect(),
+        x = event.clientX - rect.left,
+        y = event.clientY - rect.top;
+
+    debugLog("click point: ("+x+", "+y+")");
+    //find point from arrayArea
+    for(var i=0, area=arrayArea[i]; area; area=arrayArea[++i]) {
+
+      context.beginPath();
+
+      for(var j=0, point=area[j]; point; point=area[++j]) {
+        if (j==0) {
+          context.moveTo(point.getX(), point.getY());
+        } else {
+          context.lineTo(point.getX(), point.getY());
+        }
+
+        if(((point.getX()-pointRadius)<x && x<(point.getX()+pointRadius))
+          && ((point.getY()-pointRadius)<y && y<(point.getY()+pointRadius))) {
+
+          if (event.button == 0) {
+            //left-click on the point
+            selectedAreaIndex = i;
+            selectedPointIndex = j;
+          } else if(!isFixPointNumber && (event.button==2) && (area.length>3)){
+            //right-click on the point
+            event.preventDefault();
+            area.splice(j, 1);
+            _refreshCanvas();
+          }
+
+          break;
+        }
+
+      }
+      context.closePath();
+
+      if(context.isPointInPath(x, y)
+        && selectedAreaIndex < 0
+        && selectedPointIndex < 0) {
+        selectedAreaIndex = i;
+        selectedAreaX = x;
+        selectedAreaY = y;
+        copiedSelectedArea = _hardCopyArea(arrayArea[selectedAreaIndex]);
+        _initSelectedArea();
+        _calcSelectedAreaBound(selectedAreaIndex);
+      }
+      
+    }
+  }
+
   //private values  
   var elemFrameAreaCanvas = null,
       elemAreaCanvasId = null,
@@ -266,6 +391,7 @@ function AreaCanvasModule(){
       selectedAreaRight = -1,
       selectedAreaBottom = -1,
       selectedPointIndex = -1,
+      copiedSelectedArea = null,
       context = null,
       arrayArea = [],
       isDebugMode = false,
@@ -279,6 +405,9 @@ function AreaCanvasModule(){
       hoveredAreaIndex = -1,
       hoveredAreaAlpha = 0.5,
       hoveredAreaHighlight = true,
+      modifyOnlyOneArea = false,
+      modifyOnlyOneAreaIndex = 0,
+      canvasPadding=0,
       debugLog = function(paramMsg){
         if(console && console.log && isDebugMode) {
           console.log(paramMsg);
@@ -297,6 +426,8 @@ function AreaCanvasModule(){
     if (paramOption.hoveredAreaColor != null) {hoveredAreaColor=paramOption.hoveredAreaColor;}
     if (paramOption.hoveredAreaAlpha != null) {hoveredAreaAlpha=paramOption.hoveredAreaAlpha;}
     if (paramOption.hoveredAreaHighlight != null) {hoveredAreaHighlight=paramOption.hoveredAreaHighlight;}
+    if (paramOption.modifyOnlyOneArea != null) {modifyOnlyOneArea=paramOption.modifyOnlyOneArea;}
+    if (paramOption.canvasPadding != null) {canvasPadding=paramOption.canvasPadding;}
 
     if (paramOption.arrayColor != null) {
       arrayColor = (function(paramArrayColor, paramAreaNumberLimit){
@@ -324,7 +455,7 @@ function AreaCanvasModule(){
     if(0<ieVersion && ieVersion<10) { //not support canvas
       elemFrameAreaCanvas.innerHTML = "<span>not support Internet Explorer "+ieVersion+". Please using Chrome Browser.</span>"
     } else {
-      elemFrameAreaCanvas.innerHTML = "<canvas width=\""+width+"\" height=\""+height+"\"></canvas>"
+      elemFrameAreaCanvas.innerHTML = "<canvas width=\""+(width+canvasPadding)+"\" height=\""+(height+canvasPadding)+"\"></canvas>"
     }
 
     elemAreaCanvas = elemFrameAreaCanvas.children[0];
@@ -338,57 +469,8 @@ function AreaCanvasModule(){
     _setImageURL(defaultImage)
 
     if(!elemAreaCanvas.onmousedown) {
-      elemAreaCanvas.onmousedown = function(event) {
-        var rect = elemAreaCanvas.getBoundingClientRect(),
-            x = event.clientX - rect.left,
-            y = event.clientY - rect.top;
-  
-        debugLog("click point: ("+x+", "+y+")");
-        //find point from arrayArea
-        for(var i=0, area=arrayArea[i]; area; area=arrayArea[++i]) {
-
-          context.beginPath();
-
-          for(var j=0, point=area[j]; point; point=area[++j]) {
-            if (j==0) {
-              context.moveTo(point.getX(), point.getY());
-            } else {
-              context.lineTo(point.getX(), point.getY());
-            }
-
-            if(((point.getX()-pointRadius)<x && x<(point.getX()+pointRadius))
-              && ((point.getY()-pointRadius)<y && y<(point.getY()+pointRadius))) {
-
-              if (event.button == 0) {
-                //left-click on the point
-                selectedAreaIndex = i;
-                selectedPointIndex = j;
-              } else if((event.button==2) && (area.length>3)){
-                //right-click on the point
-                event.preventDefault();
-                area.splice(j, 1);
-                _refreshCanvas();
-              }
-
-              break;
-            }
-
-          }
-          context.closePath();
-
-          if(context.isPointInPath(x, y)
-            && selectedAreaIndex < 0
-            && selectedPointIndex < 0) {
-            selectedAreaIndex = i;
-            selectedAreaX = x;
-            selectedAreaY = y;
-            _initSelectedArea();
-            _calcSelectedAreaBound(selectedAreaIndex);
-          }
-          
-        }
-      }
-
+      elemAreaCanvas.onmousedown = modifyOnlyOneArea ? _onMouseDownOneArea
+                                                     : _onMouseDownMultiArea;
     }
 
     if(!elemAreaCanvas.oncontextmenu) {
@@ -409,14 +491,21 @@ function AreaCanvasModule(){
             i=0,
             modX = 0,
             modY = 0,
-            boundOver = false,
             isMouseOnArea = false;
 
-        for(var i=0; i<arrayArea.length; i++) {
-          if(_isMouseOnArea(x-selectedAreaX, y-selectedAreaY, arrayArea[i])) {
-            hoveredAreaIndex = i;
+        if(modifyOnlyOneArea) {
+          if(_isMouseOnArea(x-selectedAreaX, y-selectedAreaY, arrayArea[modifyOnlyOneAreaIndex])) {
+            hoveredAreaIndex = modifyOnlyOneAreaIndex;
             isMouseOnArea = true;
           }
+        } else {
+          for(var i=0; i<arrayArea.length; i++) {
+            if(_isMouseOnArea(x-selectedAreaX, y-selectedAreaY, arrayArea[i])) {
+              hoveredAreaIndex = i;
+              isMouseOnArea = true;
+            }
+          }
+
         }
 
         area = arrayArea[selectedAreaIndex];
@@ -429,17 +518,6 @@ function AreaCanvasModule(){
             modX = x-selectedAreaX;
             modY = y-selectedAreaY;
             _calcSelectedAreaBound(selectedAreaIndex);
-
-            if((modX<0 && (selectedAreaLeft+modX)<=0)
-              || (modX>0 && (selectedAreaRight+modX)>=elemAreaCanvas.width)) {
-              modX=0;
-              boundOver = true;
-            }
-            if(modY<=0 && (selectedAreaTop+modY)<=0
-              || modY>0 && (selectedAreaBottom+modY)>=elemAreaCanvas.height) {
-              modY=0;
-              boundOver = true;
-            }
 
             for(i=0; i<areaLength; i++) {
               targetX = area[i].getX()+modX;
@@ -464,11 +542,40 @@ function AreaCanvasModule(){
     
     if(!elemAreaCanvas.onmouseup) {
       elemAreaCanvas.onmouseup = function(event) {
+        var rect = elemAreaCanvas.getBoundingClientRect(),
+            x = event.clientX - rect.left,
+            y = event.clientY - rect.top;
+
+        debugLog(`${selectedAreaTop} ${selectedAreaBottom} ${selectedAreaLeft} ${selectedAreaRight}`)
+
+        if(selectedPointIndex >= 0) {
+          var targetPoint = arrayArea[selectedAreaIndex][selectedPointIndex];
+
+          if(selectedAreaTop < 0) {targetPoint.setY(0);}
+          if(selectedAreaBottom > height) {targetPoint.setY(height);}
+          if(selectedAreaLeft < 0) {targetPoint.setX(0);}
+          if(selectedAreaRight > width) {targetPoint.setX(width);}
+        } else if(selectedAreaIndex >= 0) {
+          _calcSelectedAreaBound(selectedAreaIndex);
+          
+          if((selectedAreaLeft < 0
+            || selectedAreaTop < 0
+            || selectedAreaRight > width
+            ||selectedAreaBottom > height) && copiedSelectedArea != null) {
+
+            arrayArea[selectedAreaIndex] = _hardCopyArea(copiedSelectedArea);
+          }
+
+        }
+
+        _refreshCanvas();
+
         selectedAreaIndex = -1;
         selectedAreaX = -1;
         selectedAreaY = -1;
         _initSelectedArea();
         selectedPointIndex = -1;
+        copiedSelectedArea = null;
       };
     }
     
@@ -664,6 +771,19 @@ function AreaCanvasModule(){
     context.strokeStyle = "#8561c7"
     context.rect(startX, startY, width, height);
     context.stroke();
+
+    return true;
+  }
+
+  this.isModifyOnlyOneArea = function() {
+    return modifyOnlyOneArea;
+  }
+
+  this.changeModifyAreaIndex = function(paramIndex) {
+    if(paramIndex < 0 || paramIndex >= arrayArea.length) {return false;}
+
+    modifyOnlyOneAreaIndex=paramIndex;
+    _refreshCanvas();
 
     return true;
   }

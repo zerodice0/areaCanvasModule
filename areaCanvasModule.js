@@ -29,7 +29,7 @@ function Point(defaultX, defaultY) {
     if (paramY) {y=paramY;}
   }
   this.toString = function(){
-    return `(${x}, ${y})`;
+    return "("+x+", "+y+")";
   }
 }
 
@@ -546,8 +546,6 @@ function AreaCanvasModule(){
             x = event.clientX - rect.left,
             y = event.clientY - rect.top;
 
-        debugLog(`${selectedAreaTop} ${selectedAreaBottom} ${selectedAreaLeft} ${selectedAreaRight}`)
-
         if(selectedPointIndex >= 0) {
           var targetPoint = arrayArea[selectedAreaIndex][selectedPointIndex];
 
@@ -681,7 +679,7 @@ function AreaCanvasModule(){
     var arrayAreaLength = arrayArea.length;
     if(arrayAreaLength >= areaNumberLimit) {return false;}
     if(!arrayArea[arrayAreaLength]) {
-      arrayArea[arrayAreaLength] = new Array();
+      arrayArea[arrayAreaLength] = [];
     }
 
     for(var data in paramPointArray) {
@@ -699,6 +697,29 @@ function AreaCanvasModule(){
 
     _refreshCanvas();
 
+    return true;
+  }
+
+  this.setPointArrayToArea = function(paramAreaIndex, paramPointArray) {
+    if(paramAreaIndex < 0) {
+      debugLog("paramAreaIndex is wrong!");
+      return false;
+    }
+
+    if(paramPointArray == null || paramPointArray.length == 0) {
+      debugLog("paramPointArray is empty or null!")
+      return false;
+    }
+
+    var result = [];
+
+    for(var i=0, point=paramPointArray[i]; point; point=paramPointArray[++i]) {
+      result.push(new Point(point.x, point.y));
+    }
+
+    arrayArea[paramAreaIndex] = _hardCopyArea(result);
+
+    _refreshCanvas();
     return true;
   }
 

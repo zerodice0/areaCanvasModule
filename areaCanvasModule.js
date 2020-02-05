@@ -112,24 +112,24 @@ function AreaCanvasModule(){
         point = area[j];
         if(j===0) {
           //draw point
-          context.moveTo(point.getX(), point.getY());
-          context.arc(point.getX(), point.getY(), pointRadius, 0, 2*Math.PI, true);
+          context.moveTo(point.getX()+canvasPadding, point.getY()+canvasPadding);
+          context.arc(point.getX()+canvasPadding, point.getY()+canvasPadding, pointRadius, 0, 2*Math.PI, true);
           context.fillStyle = arrayColor[i];
           context.fill();
-          context.moveTo(point.getX(), point.getY());
+          context.moveTo(point.getX()+canvasPadding, point.getY()+canvasPadding);
         } else {
           //draw line
-          context.lineTo(point.getX(), point.getY());
+          context.lineTo(point.getX()+canvasPadding, point.getY()+canvasPadding);
           //draw point(circle)
-          context.moveTo(point.getX(), point.getY());
-          context.arc(point.getX(), point.getY(), pointRadius, 0, 2*Math.PI, true);
+          context.moveTo(point.getX()+canvasPadding, point.getY()+canvasPadding);
+          context.arc(point.getX()+canvasPadding, point.getY()+canvasPadding, pointRadius, 0, 2*Math.PI, true);
           context.fillStyle = arrayColor[i];
           context.fill();
-          context.moveTo(point.getX(), point.getY());
+          context.moveTo(point.getX()+canvasPadding, point.getY()+canvasPadding);
         }
       }
 
-      context.lineTo(area[0].getX(), area[0].getY());
+      context.lineTo(area[0].getX()+canvasPadding, area[0].getY()+canvasPadding);
       context.globalAlpha = 1;
       context.strokeStyle = arrayColor[i];
       context.stroke();
@@ -237,9 +237,9 @@ function AreaCanvasModule(){
 
     for(var j=0, point=paramArea[j]; point; point=paramArea[++j]) {
       if (j==0) {
-        context.moveTo(point.getX(), point.getY());
+        context.moveTo(point.getX()+canvasPadding, point.getY()+canvasPadding);
       } else {
-        context.lineTo(point.getX(), point.getY());
+        context.lineTo(point.getX()+canvasPadding, point.getY()+canvasPadding);
       }
 
     }
@@ -253,9 +253,9 @@ function AreaCanvasModule(){
 
     for(var j=0, point=paramArea[j]; point; point=paramArea[++j]) {
       if (j==0) {
-        context.moveTo(point.getX(), point.getY());
+        context.moveTo(point.getX()+canvasPadding, point.getY()+canvasPadding);
       } else {
-        context.lineTo(point.getX(), point.getY());
+        context.lineTo(point.getX()+canvasPadding, point.getY()+canvasPadding);
       }
     }
     context.closePath();
@@ -290,8 +290,8 @@ function AreaCanvasModule(){
         context.lineTo(point.getX(), point.getY());
       }
 
-      if(((point.getX()-pointRadius)<x && x<(point.getX()+pointRadius))
-        && ((point.getY()-pointRadius)<y && y<(point.getY()+pointRadius))) {
+      if(((point.getX()+canvasPadding-pointRadius)<x && x<(point.getX()+canvasPadding+pointRadius))
+        && ((point.getY()+canvasPadding-pointRadius)<y && y<(point.getY()+canvasPadding+pointRadius))) {
 
         if (event.button == 0) {
           //left-click on the point
@@ -341,8 +341,8 @@ function AreaCanvasModule(){
           context.lineTo(point.getX(), point.getY());
         }
 
-        if(((point.getX()-pointRadius)<x && x<(point.getX()+pointRadius))
-          && ((point.getY()-pointRadius)<y && y<(point.getY()+pointRadius))) {
+        if(((point.getX()+canvasPadding-pointRadius)<x && x<(point.getX()+canvasPadding+pointRadius))
+          && ((point.getY()+canvasPadding-pointRadius)<y && y<(point.getY()+canvasPadding+pointRadius))) {
 
           if (event.button == 0) {
             //left-click on the point
@@ -455,7 +455,7 @@ function AreaCanvasModule(){
     if(0<ieVersion && ieVersion<10) { //not support canvas
       elemFrameAreaCanvas.innerHTML = "<span>not support Internet Explorer "+ieVersion+". Please using Chrome Browser.</span>"
     } else {
-      elemFrameAreaCanvas.innerHTML = "<canvas width=\""+(width+canvasPadding)+"\" height=\""+(height+canvasPadding)+"\"></canvas>"
+      elemFrameAreaCanvas.innerHTML = "<canvas width=\""+(width+canvasPadding*2)+"\" height=\""+(height+canvasPadding*2)+"\"></canvas>"
     }
 
     elemAreaCanvas = elemFrameAreaCanvas.children[0];
@@ -511,7 +511,7 @@ function AreaCanvasModule(){
         area = arrayArea[selectedAreaIndex];
         if(area) {
           if(selectedAreaIndex >= 0 && selectedPointIndex >= 0) {
-            area[selectedPointIndex].setPoint(x, y);
+            area[selectedPointIndex].setPoint(x-canvasPadding, y-canvasPadding);
             _refreshCanvas();
           } else if(selectedAreaIndex >= 0 && selectedAreaX >= 0 && selectedAreaY >= 0) {
             areaLength = area.length;
@@ -551,10 +551,10 @@ function AreaCanvasModule(){
         if(selectedPointIndex >= 0) {
           var targetPoint = arrayArea[selectedAreaIndex][selectedPointIndex];
 
-          if(selectedAreaTop < 0) {targetPoint.setY(0);}
-          if(selectedAreaBottom > height) {targetPoint.setY(height);}
-          if(selectedAreaLeft < 0) {targetPoint.setX(0);}
-          if(selectedAreaRight > width) {targetPoint.setX(width);}
+          if(selectedAreaTop < canvasPadding) {targetPoint.setY(0);}
+          if(selectedAreaBottom > height+canvasPadding) {targetPoint.setY(height);}
+          if(selectedAreaLeft < canvasPadding) {targetPoint.setX(0);}
+          if(selectedAreaRight > width+canvasPadding) {targetPoint.setX(width);}
         } else if(selectedAreaIndex >= 0) {
           _calcSelectedAreaBound(selectedAreaIndex);
           
@@ -562,10 +562,8 @@ function AreaCanvasModule(){
             || selectedAreaTop < 0
             || selectedAreaRight > width
             ||selectedAreaBottom > height) && copiedSelectedArea != null) {
-
             arrayArea[selectedAreaIndex] = _hardCopyArea(copiedSelectedArea);
           }
-
         }
 
         _refreshCanvas();

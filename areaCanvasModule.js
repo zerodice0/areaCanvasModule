@@ -84,32 +84,17 @@ function AreaCanvasModule(){
     return true;
   }
 
-  function _map(paramArray, paramFunction) {
-    var result = [];
-    for(var i=0, point=paramArray[i]; point; point=paramArray[++i]) {
-      result.push(paramFunction(point));
-    }
-
-    return result;
-  }
-
   function _drawArea(){
     var i=0, j=0,
     area = null,
-    point = null,
-    arrayAreaLength = arrayArea.length,
-    areaLength = 0;
-    for(i=0; i<arrayAreaLength;i++) {
-      area = arrayArea[i];
-      areaLength = area.length;
-
+    point = null;
+    for(i=0, area=arrayArea[i]; area; area=arrayArea[++i]) {
       if(modifyOnlyOneArea && modifyOnlyOneAreaIndex != i) {
         continue;
       }
 
       context.beginPath();
-      for(j=0; j<areaLength; j++) {
-        point = area[j];
+      for(j=0, point=area[j]; point; point=area[++j]) {
         if(j===0) {
           //draw point
           context.moveTo(point.getX()+canvasPadding, point.getY()+canvasPadding);
@@ -129,10 +114,12 @@ function AreaCanvasModule(){
         }
       }
 
-      context.lineTo(area[0].getX()+canvasPadding, area[0].getY()+canvasPadding);
-      context.globalAlpha = 1;
-      context.strokeStyle = arrayColor[i];
-      context.stroke();
+      if(area[0] != null) {
+        context.lineTo(area[0].getX()+canvasPadding, area[0].getY()+canvasPadding);
+        context.globalAlpha = 1;
+        context.strokeStyle = arrayColor[i];
+        context.stroke();
+      }
     }
 
     return true;
@@ -233,19 +220,23 @@ function AreaCanvasModule(){
   }
 
   function _isMouseOnArea(paramX, paramY, paramArea) {
+    var result = null;
     context.beginPath();
 
-    for(var j=0, point=paramArea[j]; point; point=paramArea[++j]) {
-      if (j==0) {
-        context.moveTo(point.getX()+canvasPadding, point.getY()+canvasPadding);
-      } else {
-        context.lineTo(point.getX()+canvasPadding, point.getY()+canvasPadding);
+    if(paramArea != null) {
+      for(var j=0, point=paramArea[j]; point; point=paramArea[++j]) {
+        if (j==0) {
+          context.moveTo(point.getX()+canvasPadding, point.getY()+canvasPadding);
+        } else {
+          context.lineTo(point.getX()+canvasPadding, point.getY()+canvasPadding);
+        }
+  
       }
-
+      context.closePath();
+      result = context.isPointInPath(paramX, paramY);
     }
-    context.closePath();
 
-    return context.isPointInPath(paramX, paramY)
+    return result;
   }
 
   function _fillColorToArea(paramArea, colorCode) {
@@ -276,51 +267,55 @@ function AreaCanvasModule(){
 
   function _onMouseDownOneArea(event) {
     var rect = elemAreaCanvas.getBoundingClientRect(),
-    x = event.clientX - rect.left,
-    y = event.clientY - rect.top;
+        area = arrayArea[modifyOnlyOneAreaIndex],
+        x = event.clientX - rect.left,
+        y = event.clientY - rect.top;
 
     debugLog("click point: ("+x+", "+y+")");
     //find point from arrayArea
-    context.beginPath();
-
-    for(var j=0, area=arrayArea[modifyOnlyOneAreaIndex], point=area[j]; point; point=area[++j]) {
-      if (j==0) {
-        context.moveTo(point.getX(), point.getY());
-      } else {
-        context.lineTo(point.getX(), point.getY());
-      }
-
-      if(((point.getX()+canvasPadding-pointRadius)<x && x<(point.getX()+canvasPadding+pointRadius))
-        && ((point.getY()+canvasPadding-pointRadius)<y && y<(point.getY()+canvasPadding+pointRadius))) {
-
-        if (event.button == 0) {
-          //left-click on the point
-          selectedAreaIndex = modifyOnlyOneAreaIndex;
-          selectedPointIndex = j;
-        } else if(!isFixPointNumber && (event.button==2) && (area.length>3)){
-          //right-click on the point
-          event.preventDefault();
-          area.splice(j, 1);
-          _refreshCanvas();
+    
+    if(area != null) {
+      context.beginPath();
+      for(var j=0, point=area[j]; point; point=area[++j]) {
+        if (j==0) {
+          context.moveTo(point.getX(), point.getY());
+        } else {
+          context.lineTo(point.getX(), point.getY());
         }
-
-        break;
+  
+        if(((point.getX()+canvasPadding-pointRadius)<x && x<(point.getX()+canvasPadding+pointRadius))
+          && ((point.getY()+canvasPadding-pointRadius)<y && y<(point.getY()+canvasPadding+pointRadius))) {
+  
+          if (event.button == 0) {
+            //left-click on the point
+            selectedAreaIndex = modifyOnlyOneAreaIndex;
+            selectedPointIndex = j;
+          } else if(!isFixPointNumber && (event.button==2) && (area.length>3)){
+            //right-click on the point
+            event.preventDefault();
+            area.splice(j, 1);
+            _refreshCanvas();
+          }
+  
+          break;
+        }
+  
       }
 
-    }
-    context.closePath();
-
-    if(context.isPointInPath(x, y)
-      && selectedAreaIndex < 0
-      && selectedPointIndex < 0) {
-      selectedAreaIndex = modifyOnlyOneAreaIndex;
-      selectedAreaX = x;
-      selectedAreaY = y;
-      copiedSelectedArea = _hardCopyArea(arrayArea[selectedAreaIndex]);
-      _initSelectedArea();
-      _calcSelectedAreaBound(selectedAreaIndex);
-    }
+      context.closePath();
       
+      if(context.isPointInPath(x, y)
+        && selectedAreaIndex < 0
+        && selectedPointIndex < 0) {
+        selectedAreaIndex = modifyOnlyOneAreaIndex;
+        selectedAreaX = x;
+        selectedAreaY = y;
+        copiedSelectedArea = _hardCopyArea(arrayArea[selectedAreaIndex]);
+        _initSelectedArea();
+        _calcSelectedAreaBound(selectedAreaIndex);
+      }
+    }
+    
   }
 
   function _onMouseDownMultiArea(event) {
@@ -618,14 +613,43 @@ function AreaCanvasModule(){
       };
     }
   };
+
+  this.checkAllPointIsSame = function(paramAreaIndex, paramX, paramY) {
+    var result = true,
+        areaIndex = paramAreaIndex != null ? paramAreaIndex : 0;
+    var array = arrayArea[areaIndex],
+        x = paramX != null ? paramX : 0,
+        y = paramY != null ? paramY : 0;
+
+    if(array != null) {
+      for (var i=0, point=array[0]; i<array.length; point = array[++i]) {
+        if(x != point.getX() || y != point.getY()) {
+          result = false;
+        }
+      }
+    }
+
+    return result;
+  }
   
   this.getAllArea = function() {return arrayArea;};
-  
   this.getArea = function(paramAreaIndex) {
     if(paramAreaIndex < 0) {return false;}
     if(!arrayArea[paramAreaIndex]) {return false;}
 
     return arrayArea[paramAreaIndex];
+  }
+
+  this.removeAllArea = function(){
+    arrayArea.length=0;
+    _refreshCanvas();
+  }
+  this.removeArea = function(paramAreaIndex) {
+    if(paramAreaIndex < 0) {return false;}
+    if(!arrayArea[paramAreaIndex]) {return false;}
+
+    arrayArea[paramAreaIndex].length = 0;
+    _refreshCanvas();
   }
 
   this.getAreaToRelativeCoordinates = function(paramAreaIndex) {
@@ -799,9 +823,10 @@ function AreaCanvasModule(){
   }
 
   this.changeModifyAreaIndex = function(paramIndex) {
-    if(paramIndex < 0 || paramIndex >= arrayArea.length) {return false;}
+    modifyOnlyOneAreaIndex = 
+      (paramIndex < 0 || paramIndex >= arrayArea.length)
+      ? -1 : paramIndex;
 
-    modifyOnlyOneAreaIndex=paramIndex;
     _refreshCanvas();
 
     return true;

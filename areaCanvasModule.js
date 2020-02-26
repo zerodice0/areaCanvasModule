@@ -37,10 +37,6 @@ function AreaCanvasModule(){
   'use strict'
 
   //private function
-  function _isNullOrUndefined(paramValue){
-    return paramValue == undefined || paramValue == null;
-  }
-
   function _getIeVersion(){
     var msIeRegExp = new RegExp("MSIE ([0-9]{1,}[\.0-9]{0,})"),
         tridentRegExp  = new RegExp("Trident/.*rv:([0-9]{1,}[\.0-9]{0,})"),
@@ -88,6 +84,18 @@ function AreaCanvasModule(){
     var i=0, j=0,
     area = null,
     point = null;
+
+    if(drawBorder) {
+      context.beginPath();
+      context.strokeStyle="#000000"
+      context.moveTo(canvasPadding, canvasPadding);
+      context.lineTo(canvasPadding+width, canvasPadding);
+      context.lineTo(canvasPadding+width, canvasPadding+height);
+      context.lineTo(canvasPadding, canvasPadding+height);
+      context.lineTo(canvasPadding, canvasPadding);
+      context.stroke();
+    }
+
     for(i=0, area=arrayArea[i]; area; area=arrayArea[++i]) {
       if(modifyOnlyOneArea && modifyOnlyOneAreaIndex != i) {
         continue;
@@ -146,10 +154,15 @@ function AreaCanvasModule(){
 
     previewImage = new Image(width, height);
     previewImage.onload = function (){
+      var imageWidth = imageCropWidthFunc==null ? width : imageCropWidthFunc(width);
+      var imageHeight = imageCropHeightFunc==null ? height : imageCropHeightFunc(height);
+      var startPositionX = canvasPadding + (width-imageWidth)/2;
+      var startPositionY = canvasPadding + (height-imageHeight)/2;
+
       //rendering image
       elemAreaCanvas.style.background="url("+jpegURL+")";
-      elemAreaCanvas.style.backgroundPosition = canvasPadding+"px "+canvasPadding+"px";
-      elemAreaCanvas.style.backgroundSize = width+"px "+height+"px";
+      elemAreaCanvas.style.backgroundPosition = startPositionX+"px "+startPositionY+"px";
+      elemAreaCanvas.style.backgroundSize = imageWidth+"px "+imageHeight+"px";
       elemAreaCanvas.style.backgroundRepeat = "no-repeat";
 
       //rendering area
@@ -403,6 +416,9 @@ function AreaCanvasModule(){
       modifyOnlyOneArea = false,
       modifyOnlyOneAreaIndex = 0,
       canvasPadding=0,
+      imageCropWidthFunc = null,
+      imageCropHeightFunc = null,
+      drawBorder = false,
       debugLog = function(paramMsg){
         if(console && console.log && isDebugMode) {
           console.log(paramMsg);
@@ -423,6 +439,9 @@ function AreaCanvasModule(){
     if (paramOption.hoveredAreaHighlight != null) {hoveredAreaHighlight=paramOption.hoveredAreaHighlight;}
     if (paramOption.modifyOnlyOneArea != null) {modifyOnlyOneArea=paramOption.modifyOnlyOneArea;}
     if (paramOption.canvasPadding != null) {canvasPadding=paramOption.canvasPadding;}
+    if (paramOption.imageCropWidthFunc != null) {imageCropWidthFunc=paramOption.imageCropWidthFunc;}
+    if (paramOption.imageCropHeightFunc != null) {imageCropHeightFunc=paramOption.imageCropHeightFunc;}
+    if (paramOption.drawBorder != null) {drawBorder=paramOption.drawBorder;}
 
     if (paramOption.arrayColor != null) {
       arrayColor = (function(paramArrayColor, paramAreaNumberLimit){
@@ -465,7 +484,7 @@ function AreaCanvasModule(){
 
     if(!elemAreaCanvas.onmousedown) {
       elemAreaCanvas.onmousedown = modifyOnlyOneArea ? _onMouseDownOneArea
-                                                     : _onMouseDownMultiArea;
+        : _onMouseDownMultiArea;
     }
 
     if(!elemAreaCanvas.oncontextmenu) {
@@ -797,8 +816,8 @@ function AreaCanvasModule(){
         width = 0,
         height = 0;
 
-    if(_isNullOrUndefined(paramStartX) || _isNullOrUndefined(paramStartY)
-      || _isNullOrUndefined(paramEndX) || _isNullOrUndefined(paramEndY)) {
+    if(paramStartX == null || paramStartY == null
+      || paramEndX == null || paramEndY == null) {
         return false;
     }
     if(paramLabel) {label = paramLabel;}
